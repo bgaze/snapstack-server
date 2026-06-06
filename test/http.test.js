@@ -55,13 +55,16 @@ function rawStatus(method, pathname, host, body) {
   });
 }
 
-test('GET /health returns the version handshake', async () => {
+test('GET /health returns the version + protocol handshake', async () => {
   const r = await fetch(`${base}/health`);
   assert.equal(r.status, 200);
   const j = await r.json();
   assert.equal(j.ok, true);
   assert.equal(j.name, 'snapstack');
   assert.match(j.version, /^\d+\.\d+\.\d+/);
+  assert.equal(typeof j.protocol, 'number');
+  assert.ok(j.protocol >= 1);
+  assert.equal(typeof j.minClientProtocol, 'number');
 });
 
 test('push → list → file → clear round-trip', async () => {
