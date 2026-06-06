@@ -1,0 +1,21 @@
+{
+  "name": "snapstack-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local always-on server for snapstack: browser capture intake + MCP (Streamable HTTP) over 127.0.0.1",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "snapstack-server": "snapstack-server.js"
+  },
+  "scripts": {
+    "start": "node snapstack-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  }
+}

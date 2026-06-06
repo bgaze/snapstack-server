@@ -1,0 +1,24 @@
+<svg viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg">
+    <linearGradient id="a" gradientUnits="userSpaceOnUse" x1="50" x2="150" y1="135" y2="135">
+        <stop offset="0" stop-color="#6366f1"/>
+        <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <rect fill="#fff" height="180" rx="28" width="720"/>
+    <g stroke-width="10">
+        <path d="m60 132h66c10 0 18-8 18-18v-42" fill="none" stroke="url(#a)" stroke-linecap="round"/>
+        <path d="m52 118h66c10 0 18-8 18-18v-42" fill="none" opacity=".9" stroke="#6366f1" stroke-linecap="round"/>
+        <g fill="#fff" stroke="#0f172a">
+            <path d="m40 66c0-8 6-14 14-14h14l8-10h32l8 10h12c8 0 14 6 14 14v44c0 8-6 14-14 14h-74c-8 0-14-6-14-14z"
+                  stroke-linejoin="round"/>
+            <circle cx="91" cy="88" r="20"/>
+        </g>
+    </g>
+    <circle cx="91" cy="88" fill="#6366f1" r="9"/>
+    <circle cx="123" cy="72" fill="#0f172a" r="5"/>
+    <g font-family="Inter, Arial, sans-serif">
+        <text fill="#0f172a" font-size="48" font-weight="800" x="185" y="87">SnapStack</text>
+        <text fill="#64748b" font-size="22" font-weight="500" x="188" y="123">Capture. Stack. Share with any LLM via
+            MCP.
+        </text>
+    </g>
+</svg>
