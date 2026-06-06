@@ -2,6 +2,10 @@
   <img src="assets/logo.png" alt="snapstack" width="440">
 </p>
 
+<p align="center">
+  <a href="https://github.com/bgaze/snapstack-server/actions/workflows/ci.yml"><img src="https://github.com/bgaze/snapstack-server/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+</p>
+
 The **snapstack server** is a single always-on Node process: it receives browser captures from the
 [extension](https://github.com/bgaze/snapstack-extension), stacks them on disk, and serves them to any
 MCP-capable LLM client over **Streamable HTTP**. It listens only on `127.0.0.1` — nothing ever leaves your machine.
