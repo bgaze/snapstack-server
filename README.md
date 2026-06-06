@@ -24,9 +24,12 @@ A single always-on Node server serves both the extension (capture) and your MCP 
 ```
 
 - **Capture**: the extension encodes the capture as WebP (PNG fallback), downscales it if needed, and POSTs it here.
-- **Stack**: one image file (`.webp`/`.png`) plus a twin `.json` (URL, title, timestamp) per capture, named to stay in
-  chronological order under `~/.snapstack/`.
-- **Retrieval**: the MCP tools read the stack, return the images to the LLM, then clear it.
+- **Stack**: one image file (`.webp`/`.png`) plus a twin `.json` (URL, title, timestamp, dimensions) per capture, named
+  `NN <timestamp>` — a stable two-digit capture number plus a timestamp — under `~/.snapstack/`. The number is assigned
+  in capture order and restarts at `01` once the stack is empty.
+- **Retrieval**: `get_screenshots` returns a JSON **manifest** of the stack (number, absolute path, dimensions,
+  metadata — no image bytes); the LLM reads only the files it needs, by path. Deletion is a separate, on-demand step
+  (`clear_screenshots`).
 
 ## Requirements
 
@@ -92,11 +95,11 @@ Most MCP clients accept a project- or user-level config; copy `deploy/mcp.json` 
 
 ### Exposed MCP tools
 
-| Tool                | Description                                                                                                                    |
-|---------------------|--------------------------------------------------------------------------------------------------------------------------------|
-| `get_screenshots`   | Retrieves pending captures (chronological order) then clears the stack. Options: `keep` (don't clear), `limit` (the N oldest). |
-| `clear_screenshots` | Clears the stack without retrieving anything.                                                                                  |
-| `count_screenshots` | Number of pending captures, without retrieving them.                                                                           |
+| Tool                | Description                                                                                                                                          |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `get_screenshots`   | Lists pending captures as a JSON manifest (stable number, absolute path, width/height, metadata) — **no image bytes, no deletion**. The client reads a file by its path only when it needs the pixels. Pass `numbers` (e.g. `[1,3]`) to list only specific captures. |
+| `clear_screenshots` | Deletes captures from the stack. Pass `numbers` to delete only specific ones; omit to clear the whole stack.                                          |
+| `count_screenshots` | Number of pending captures, without retrieving them.                                                                                                 |
 
 ### Auto-approving the tools (optional)
 
@@ -118,9 +121,9 @@ For **Claude Code**, add the tool identifiers (`mcp__<server>__<tool>`) to `perm
 }
 ```
 
-`mcp__snapstack` alone (no tool suffix) would allow all of the server's tools at once. Note that `get_screenshots`
-(clears the stack after retrieval) and `clear_screenshots` (deletes everything) are **destructive** — this is the
-intended workflow, but omit `clear_screenshots` from the list if you'd rather keep a confirmation on the full wipe.
+`mcp__snapstack` alone (no tool suffix) would allow all of the server's tools at once. `get_screenshots` and
+`count_screenshots` are **read-only** (they never delete). Only `clear_screenshots` is **destructive** — omit it from
+the list if you'd rather keep a confirmation before captures are deleted.
 
 ## Configuration (environment variables)
 
@@ -129,8 +132,8 @@ intended workflow, but omit `clear_screenshots` from the list if you'd rather ke
 | `SNAPSTACK_DIR`  | `~/.snapstack` | Stack folder.                           |
 | `SNAPSTACK_PORT` | `4123`         | Listening port (always on `127.0.0.1`). |
 
-> **Token cost**: some MCP clients cap a tool's output size, and images are large. For long stacks, use `limit` on
-> `get_screenshots` (call it repeatedly to drain the stack in batches), and keep WebP + `maxEdge` to reduce weight.
+> **Token cost**: `get_screenshots` returns only a JSON manifest (no image bytes), so it stays cheap whatever the stack
+> size — the client then reads just the files it actually needs, by path. WebP + `maxEdge` keep those reads light.
 
 ## Troubleshooting
 
