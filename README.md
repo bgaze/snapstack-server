@@ -4,6 +4,10 @@
 
 <p align="center">
   <a href="https://github.com/bgaze/snapstack-server/actions/workflows/ci.yml"><img src="https://github.com/bgaze/snapstack-server/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/bgaze/snapstack-server?color=blue" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node >= 18">
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-blueviolet" alt="MCP compatible"></a>
+  <img src="https://img.shields.io/badge/100%25-local-success" alt="100% local">
 </p>
 
 The **snapstack server** is a single always-on Node process: it receives browser captures from the
