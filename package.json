@@ -1,16 +1,43 @@
 {
   "name": "snapstack-server",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "description": "Local always-on server for snapstack: browser capture intake + MCP (Streamable HTTP) over 127.0.0.1",
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "snapstack",
+    "mcp",
+    "model-context-protocol",
+    "screenshot",
+    "browser",
+    "local"
+  ],
+  "homepage": "https://github.com/bgaze/snapstack-server#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bgaze/snapstack-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bgaze/snapstack-server/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "engines": {
     "node": ">=18"
   },
   "bin": {
     "snapstack-server": "snapstack-server.js"
   },
+  "files": [
+    "snapstack-server.js",
+    "lib/",
+    "deploy/mcp.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "node snapstack-server.js",
     "test": "node --test",

@@ -5,6 +5,21 @@ import { ensureDir } from './lib/stack.js';
 import { handleCaptureRequest } from './lib/capture-routes.js';
 import { handleMcpRequest } from './lib/mcp-routes.js';
 
+// Subcommands: register/remove the auto-start unit (start at login + self-update).
+// `snapstack-server` with no subcommand runs the server in the foreground.
+const cmd = process.argv[2];
+if (cmd === 'install' || cmd === 'uninstall') {
+  const { install, uninstall } = await import('./lib/install.js');
+  try {
+    if (cmd === 'install') install();
+    else uninstall();
+  } catch (e) {
+    console.error(String(e?.message || e));
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
 // Single always-on process: serves the capture intake (/push, /health, /count)
 // for the browser extension AND the MCP endpoint (/mcp) for any MCP client, all on
 // 127.0.0.1 only. The stack folder on disk is the decoupling point.
