@@ -12,10 +12,17 @@
     "snapstack-server": "snapstack-server.js"
   },
   "scripts": {
-    "start": "node snapstack-server.js"
+    "start": "node snapstack-server.js",
+    "test": "node --test",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0"
   }
 }
