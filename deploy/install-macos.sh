@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# Install the snapstack server as a macOS LaunchAgent (starts at login, restarts on crash).
+# Install the snapstack server as a macOS LaunchAgent:
+# starts at login, restarts on crash, and self-updates on each (re)start
+# (via deploy/snapstack-start.sh). Idempotent — safe to re-run.
 set -euo pipefail
 
-NODE_BIN="$(command -v node || true)"
-if [ -z "$NODE_BIN" ]; then
-  echo "node not found in PATH. Install Node.js >= 18 first." >&2
-  exit 1
-fi
+command -v node >/dev/null 2>&1 || { echo "node not found in PATH. Install Node.js >= 18 first." >&2; exit 1; }
+command -v git  >/dev/null 2>&1 || echo "warning: git not found — auto-update at launch will be skipped." >&2
 
-SERVER="$(cd "$(dirname "$0")/../server" && pwd)/snapstack-server.js"
+DIR="$(cd "$(dirname "$0")/.." && pwd)"
+LAUNCHER="$DIR/deploy/snapstack-start.sh"
+chmod +x "$LAUNCHER"
+
 LABEL="com.snapstack.server"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
@@ -22,8 +24,8 @@ cat > "$PLIST" <<EOF
   <string>$LABEL</string>
   <key>ProgramArguments</key>
   <array>
-    <string>$NODE_BIN</string>
-    <string>$SERVER</string>
+    <string>/bin/sh</string>
+    <string>$LAUNCHER</string>
   </array>
   <key>RunAtLoad</key>
   <true/>
@@ -41,7 +43,6 @@ launchctl unload "$PLIST" 2>/dev/null || true
 launchctl load "$PLIST"
 
 echo "Installed and loaded: $PLIST"
-echo "  node   : $NODE_BIN"
-echo "  server : $SERVER"
-echo "  logs   : /tmp/snapstack.out.log  /tmp/snapstack.err.log"
+echo "  launcher : $LAUNCHER"
+echo "  logs     : /tmp/snapstack.out.log  /tmp/snapstack.err.log"
 echo "Uninstall: launchctl unload \"$PLIST\" && rm \"$PLIST\""

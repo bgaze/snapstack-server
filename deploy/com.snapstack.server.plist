@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   launchd LaunchAgent template for the snapstack server (macOS).
-  Reference only — prefer ./install-macos.sh, which fills the absolute paths
-  and loads the agent for you. To use this file by hand, replace __NODE__ and
-  __SERVER__ with absolute paths, copy it to ~/Library/LaunchAgents/, then run:
+  Reference only — prefer ./install-macos.sh, which fills the absolute path and
+  loads the agent for you. To use this file by hand, replace __LAUNCHER__ with the
+  absolute path to deploy/snapstack-start.sh, copy it to ~/Library/LaunchAgents/,
+  then run:
       launchctl load ~/Library/LaunchAgents/com.snapstack.server.plist
+  The launcher (snapstack-start.sh) pulls the latest code and ensures deps before
+  starting node, so the agent self-updates on each (re)start.
 -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -13,8 +16,8 @@
   <string>com.snapstack.server</string>
   <key>ProgramArguments</key>
   <array>
-    <string>__NODE__</string>
-    <string>__SERVER__</string>
+    <string>/bin/sh</string>
+    <string>__LAUNCHER__</string>
   </array>
   <key>RunAtLoad</key>
   <true/>

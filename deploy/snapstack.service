@@ -1,17 +1,20 @@
 # systemd user unit for the snapstack server (Linux).
-# Install:
-#   1. Edit ExecStart paths below (run `which node` and use the absolute repo path).
+# Reference only — prefer ./install-linux.sh, which fills the absolute path,
+# installs the unit and enables it for you. To use this file by hand:
+#   1. Replace __LAUNCHER__ below with the absolute path to deploy/snapstack-start.sh.
 #   2. cp deploy/snapstack.service ~/.config/systemd/user/
 #   3. systemctl --user daemon-reload
 #   4. systemctl --user enable --now snapstack.service
 # Status / logs:  systemctl --user status snapstack   |   journalctl --user -u snapstack -f
+# The launcher (snapstack-start.sh) pulls the latest code and ensures deps before
+# starting node, so the service self-updates on each (re)start.
 
 [Unit]
 Description=snapstack capture + MCP server (local)
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/node /ABSOLUTE/PATH/TO/snapstack/server/snapstack-server.js
+ExecStart=/usr/bin/env sh __LAUNCHER__
 Restart=on-failure
 RestartSec=2
 # Environment=SNAPSTACK_PORT=4123
