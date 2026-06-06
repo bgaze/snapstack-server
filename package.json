@@ -29,10 +29,12 @@
     "node": ">=18"
   },
   "bin": {
-    "snapstack-server": "snapstack-server.js"
+    "snapstack-server": "snapstack-server.js",
+    "snapstack-mcp": "snapstack-mcp.js"
   },
   "files": [
     "snapstack-server.js",
+    "snapstack-mcp.js",
     "lib/",
     "deploy/mcp.json",
     "README.md",
