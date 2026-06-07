@@ -23,6 +23,11 @@ test('writeConfig validates, persists, and readConfig reads it back', async () =
   assert.deepEqual(onDisk, saved);
 });
 
+test('writeConfig accepts the jpg format', async () => {
+  const saved = await writeConfig({ format: 'jpg', quality: 0.8, maxEdge: 1568, maxSlices: 50 });
+  assert.equal(saved.format, 'jpg');
+});
+
 test('writeConfig rejects invalid or incomplete policies', async () => {
   await assert.rejects(() => writeConfig({ format: 'gif', quality: 0.5, maxEdge: 100, maxSlices: 10 }));
   await assert.rejects(() => writeConfig({ format: 'webp', quality: 2, maxEdge: 100, maxSlices: 10 }));
