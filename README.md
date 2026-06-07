@@ -96,12 +96,31 @@ tool without a per-call confirmation, add its identifier to your client's allow-
 > **Token cost**: `get_screenshots` returns only the manifest, so it stays cheap whatever the stack size — the client
 > then reads just the files it needs. WebP + downscaling keep those reads light.
 
-## Configuration (environment variables)
+## Configuration
+
+### Environment variables (infrastructure)
 
 | Variable         | Default        | Purpose                                 |
 |------------------|----------------|-----------------------------------------|
 | `SNAPSTACK_DIR`  | `~/.snapstack` | Stack folder.                           |
 | `SNAPSTACK_PORT` | `4123`         | Listening port (always on `127.0.0.1`). |
+
+### Capture policy (shared across your browsers)
+
+The encoding/capture settings are **owned by the server** and stored in `~/.snapstack/config.json`, so a single
+edit applies to **every browser** running the extension. They are edited from the extension's **options page** — not
+an environment variable — and fetched by the extension before each capture.
+
+| Key         | Default | Meaning                                              |
+|-------------|---------|------------------------------------------------------|
+| `format`    | `webp`  | Image format: `webp` or `png`.                       |
+| `quality`   | `0.85`  | Lossy quality (`0`–`1`).                             |
+| `maxEdge`   | `1568`  | Downscale the longest edge to N px (`0` = no resize).|
+| `maxSlices` | `50`    | Full-page capture: hard cap on stitched slices.      |
+
+Two endpoints back it: `GET /config` returns the effective policy; `POST /config` validates and replaces it (host- +
+CORS-guarded like every capture route). The file is a non-image, so a stack clear never touches it; deleting it just
+restores the defaults above.
 
 ## Troubleshooting
 
