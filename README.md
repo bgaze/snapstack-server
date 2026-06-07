@@ -39,36 +39,47 @@ One always-on process serves both the extension (capture) and your MCP client, d
 
 ## Requirements
 
-- **Node.js ≥ 18** (tested on Node 20) and **git** (for self-update at launch).
-- An **MCP-capable LLM client** speaking the HTTP (Streamable HTTP) transport.
+- **Node.js ≥ 18** (tested on Node 20). No git needed at runtime.
+- An **MCP-capable LLM client** speaking the **HTTP** (Streamable HTTP) or **stdio** transport.
 - The **[snapstack-extension](https://github.com/bgaze/snapstack-extension)** loaded in your browser.
 
 ## Install & run
 
-```bash
-git clone https://github.com/bgaze/snapstack-server.git
-cd snapstack-server
-npm install        # only @modelcontextprotocol/sdk + zod
-npm start          # → snapstack server listening on http://127.0.0.1:4123
-```
-
-For start-at-login + crash-restart + self-update, run the installer for your OS — it wires an auto-start unit that
-calls `deploy/snapstack-start.*`, which does a fail-open `git pull --ff-only` before launching node:
+Run it once in the foreground:
 
 ```bash
-./deploy/install-macos.sh      # macOS  — launchd LaunchAgent
-./deploy/install-linux.sh      # Linux  — systemd --user service
-.\deploy\install-windows.ps1   # Windows — logon scheduled task
+npx -y snapstack-server@latest        # → snapstack server listening on http://127.0.0.1:4123
 ```
+
+For start-at-login + crash-restart + self-update, install the auto-start unit (launchd on macOS, systemd `--user` on
+Linux, a logon scheduled task on Windows):
+
+```bash
+npx -y snapstack-server@latest install     # register auto-start; uninstall with `… uninstall`
+```
+
+The unit runs a best-effort `npm install --prefix <appDir> snapstack-server@latest` then launches the locally installed
+copy — so the server self-updates on each (re)start, and still starts offline once installed. No git involved.
 
 The full end-to-end walkthrough (idiomatic install paths, MCP client registration, the extension) is in the
 **[extension README](https://github.com/bgaze/snapstack-extension)**.
 
 ## MCP
 
-Register the running server as an **HTTP** MCP server pointing at `http://127.0.0.1:4123/mcp`
-(copy `deploy/mcp.json` or adapt it — config syntax is client-specific). The `/mcp` endpoint is **stateless**:
-a fresh server + transport is built per request.
+snapstack speaks two MCP transports over the same on-disk stack — pick whichever your client supports:
+
+```jsonc
+// HTTP (server already running) — register http://127.0.0.1:4123/mcp; copy deploy/mcp.json
+{ "type": "http", "url": "http://127.0.0.1:4123/mcp" }
+```
+```jsonc
+// stdio (the client spawns the process)
+{ "command": "npx", "args": ["-y", "-p", "snapstack-server", "snapstack-mcp"] }
+```
+
+The HTTP `/mcp` endpoint is **stateless** (a fresh server + transport per request); the stdio front-end (`snapstack-mcp`)
+is spawned on demand and reads the same `~/.snapstack` stack. Capture intake (`/push`) always stays in the running
+server, independent of either MCP front-end.
 
 ### Exposed tools
 

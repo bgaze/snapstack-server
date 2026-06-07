@@ -1,0 +1,42 @@
+name: Publish
+
+# Publishes snapstack-server to npm when a version tag is pushed (e.g. v1.2.0).
+# Draft: inert until the NPM_TOKEN secret is set. The server then self-updates on
+# each (re)start via `npm install --prefix <appDir> snapstack-server@latest`
+# (see lib/install.js), so a publish reaches users on their next restart.
+#
+# Required repo secret:
+#   NPM_TOKEN  — npm automation token with publish rights on snapstack-server.
+# Provenance is emitted (publishConfig.provenance in package.json) thanks to the
+# id-token permission below — no extra secret needed.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # npm provenance (OIDC)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      # Fail fast if the tag and package.json version disagree.
+      - name: Check tag matches package version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          test "$tag" = "$pkg" || { echo "tag $tag != package.json $pkg"; exit 1; }
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
