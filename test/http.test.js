@@ -113,26 +113,26 @@ test('GET /config returns the default policy', async () => {
   const j = await r.json();
   assert.equal(j.format, 'webp');
   assert.equal(j.quality, 0.85);
-  assert.equal(j.maxEdge, 1568);
+  assert.equal(j.maxWidth, 1568);
   assert.equal(j.maxSlices, 50);
 });
 
 test('POST /config persists a valid policy and GET reads it back', async () => {
-  const body = JSON.stringify({ format: 'png', quality: 0.7, maxEdge: 1200, maxSlices: 30 });
+  const body = JSON.stringify({ format: 'png', quality: 0.7, maxWidth: 1200, maxSlices: 30 });
   const post = await fetch(`${base}/config`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body,
   });
   assert.equal(post.status, 200);
-  assert.deepEqual(await post.json(), { format: 'png', quality: 0.7, maxEdge: 1200, maxSlices: 30 });
+  assert.deepEqual(await post.json(), { format: 'png', quality: 0.7, maxWidth: 1200, maxSlices: 30 });
   const get = await (await fetch(`${base}/config`)).json();
   assert.equal(get.format, 'png');
-  assert.equal(get.maxEdge, 1200);
+  assert.equal(get.maxWidth, 1200);
 });
 
 test('POST /config rejects an invalid policy with 400', async () => {
-  const bad = JSON.stringify({ format: 'tiff', quality: 0.5, maxEdge: 100, maxSlices: 10 });
+  const bad = JSON.stringify({ format: 'tiff', quality: 0.5, maxWidth: 100, maxSlices: 10 });
   const r = await fetch(`${base}/config`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -145,12 +145,12 @@ test('config.json survives a stack clear', async () => {
   await fetch(`${base}/config`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ format: 'png', quality: 0.5, maxEdge: 1000, maxSlices: 25 }),
+    body: JSON.stringify({ format: 'png', quality: 0.5, maxWidth: 1000, maxSlices: 25 }),
   });
   await fetch(`${base}/push`, { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: makePng(10, 10) });
   await fetch(`${base}/clear`, { method: 'POST' });
   const get = await (await fetch(`${base}/config`)).json();
-  assert.equal(get.maxEdge, 1000);
+  assert.equal(get.maxWidth, 1000);
 });
 
 test('capture surface rejects a forged Host (DNS-rebinding guard)', async () => {

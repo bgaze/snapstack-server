@@ -113,9 +113,9 @@ an environment variable — and fetched by the extension before each capture.
 
 | Key         | Default | Meaning                                              |
 |-------------|---------|------------------------------------------------------|
-| `format`    | `webp`  | Image format: `webp` or `png`.                       |
-| `quality`   | `0.85`  | Lossy quality (`0`–`1`).                             |
-| `maxEdge`   | `1568`  | Downscale the longest edge to N px (`0` = no resize).|
+| `format`    | `webp`  | Image format: `webp`, `png` or `jpg`.                |
+| `quality`   | `0.85`  | Lossy quality (`0`–`1`; the extension UI shows it as a percentage). |
+| `maxWidth`  | `1568`  | Downscale captures wider than this to this width in px (`0` = no resize). |
 | `maxSlices` | `50`    | Full-page capture: hard cap on stitched slices.      |
 
 Two endpoints back it: `GET /config` returns the effective policy; `POST /config` validates and replaces it (host- +
