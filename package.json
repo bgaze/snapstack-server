@@ -2,7 +2,8 @@
   "name": "snapstack-server",
   "version": "1.0.0",
   "private": false,
-  "description": "Local always-on server for snapstack: browser capture intake + MCP (Streamable HTTP) over 127.0.0.1",
+  "description": "Local always-on server for SnapStack: browser capture intake + MCP (Streamable HTTP) over 127.0.0.1",
+  "mcpName": "io.github.bgaze/snapstack-server",
   "license": "MIT",
   "type": "module",
   "keywords": [
@@ -10,6 +11,11 @@
     "mcp",
     "model-context-protocol",
     "screenshot",
+    "claude",
+    "claude-code",
+    "cursor",
+    "ai",
+    "llm",
     "browser",
     "local"
   ],
