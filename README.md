@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="snapstack" width="440">
+  <img src="assets/logo.png" alt="SnapStack" width="440">
 </p>
 
 <p align="center">
@@ -10,7 +10,11 @@
   <img src="https://img.shields.io/badge/100%25-local-success" alt="100% local">
 </p>
 
-The **snapstack server** is a single always-on Node process: it receives browser captures from the
+<p align="center">
+  <img src="assets/demo.gif" alt="SnapStack demo — capture a browser tab, your AI reads the screenshots over MCP" width="900">
+</p>
+
+The **SnapStack server** is a single always-on Node process: it receives browser captures from the
 [extension](https://github.com/bgaze/snapstack-extension), stacks them on disk, and serves them to any
 MCP-capable LLM client over **Streamable HTTP**. It listens only on `127.0.0.1` — nothing ever leaves your machine.
 
@@ -24,7 +28,7 @@ One always-on process serves both the extension (capture) and your MCP client, d
 ```
 [MV3 extension]  --POST /push (bytes)-->  ┐
                                           ▼
-                            [snapstack server]   127.0.0.1:4123
+                            [SnapStack server]   127.0.0.1:4123
                                ├─ writes ─►  ~/.snapstack/   (stack on disk)
                                └─ MCP /mcp (HTTP)  ◄── MCP client
 ```
@@ -48,7 +52,7 @@ One always-on process serves both the extension (capture) and your MCP client, d
 Run it once in the foreground:
 
 ```bash
-npx -y snapstack-server@latest        # → snapstack server listening on http://127.0.0.1:4123
+npx -y snapstack-server@latest        # → SnapStack server listening on http://127.0.0.1:4123
 ```
 
 For start-at-login + crash-restart + self-update, install the auto-start unit (launchd on macOS, systemd `--user` on
@@ -66,7 +70,7 @@ The full end-to-end walkthrough (idiomatic install paths, MCP client registratio
 
 ## MCP
 
-snapstack speaks two MCP transports over the same on-disk stack — pick whichever your client supports:
+SnapStack speaks two MCP transports over the same on-disk stack — pick whichever your client supports:
 
 ```jsonc
 // HTTP (server already running) — register http://127.0.0.1:4123/mcp; copy deploy/mcp.json
