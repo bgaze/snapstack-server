@@ -1,14 +1,13 @@
 name: Publish
 
 # Publishes snapstack-server to npm when a version tag is pushed (e.g. v1.2.0).
-# Draft: inert until the NPM_TOKEN secret is set. The server then self-updates on
-# each (re)start via `npm install --prefix <appDir> snapstack-server@latest`
-# (see lib/install.js), so a publish reaches users on their next restart.
-#
-# Required repo secret:
-#   NPM_TOKEN  — npm automation token with publish rights on snapstack-server.
-# Provenance is emitted (publishConfig.provenance in package.json) thanks to the
-# id-token permission below — no extra secret needed.
+# Auth: npm Trusted Publishing (OIDC) — NO token/secret. Configure the trusted publisher
+# once on npmjs.com (package Settings: user `bgaze`, repo `snapstack-server`, workflow
+# `publish.yml`, action `npm publish`). The very first publish (1.0.0) is done manually
+# from a logged-in machine because trusted publishing can't bootstrap a brand-new package.
+# Provenance is emitted automatically (publishConfig.provenance + the id-token permission).
+# The server self-updates on each (re)start via `npm install --prefix <appDir>
+# snapstack-server@latest` (see lib/install.js), so a publish reaches users on next restart.
 
 on:
   push:
@@ -28,6 +27,8 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
+      # Trusted publishing (OIDC) requires npm >= 11.5.1 — newer than the one bundled with Node.
+      - run: npm install -g npm@latest
       - run: npm ci
       - run: npm run lint
       - run: npm test
@@ -37,6 +38,4 @@ jobs:
           tag="${GITHUB_REF_NAME#v}"
           pkg="$(node -p "require('./package.json').version")"
           test "$tag" = "$pkg" || { echo "tag $tag != package.json $pkg"; exit 1; }
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish # OIDC trusted publishing — no token, provenance automatic
