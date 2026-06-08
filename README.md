@@ -8,6 +8,8 @@
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node >= 18">
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-blueviolet" alt="MCP compatible"></a>
   <img src="https://img.shields.io/badge/100%25-local-success" alt="100% local">
+  <a href="https://www.npmjs.com/package/snapstack-server"><img src="https://img.shields.io/npm/v/snapstack-server?label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/snapstack-server"><img src="https://img.shields.io/npm/dm/snapstack-server?label=downloads" alt="npm downloads"></a>
 </p>
 
 <p align="center">
