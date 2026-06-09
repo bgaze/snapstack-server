@@ -64,6 +64,9 @@ task on Windows):
 snapstack enable        # register auto-start   ·   snapstack disable to remove
 ```
 
+> **Windows:** run the install (`npm i -g` + `snapstack enable`) in an **Administrator** terminal (PowerShell *Run as
+> administrator*) — the global install and scheduled-task registration need elevation, or they get rejected.
+
 The auto-start launcher runs a best-effort `npm install --prefix <appDir> snapstack-server@latest` then launches the
 locally installed copy — so the server self-updates on each (re)start, and still starts offline once installed. No git
 involved.

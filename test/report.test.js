@@ -43,11 +43,12 @@ test('serverBadge is healthy with /health, else points at the right remedy', () 
   assert.match(serverBadge(null, { enabled: false, running: false }).hint, /enable/);
 });
 
-test('updateLine shows an upgrade, up-to-date, or offline state', () => {
-  assert.match(updateLine({ local: '1.0.3', latest: '1.1.0', useColor: false }), /update available\s+1\.0\.3 → 1\.1\.0/);
-  assert.match(updateLine({ local: '1.0.3', latest: '1.1.0', useColor: false }), /snapstack restart/);
-  assert.match(updateLine({ local: '1.1.0', latest: '1.1.0', useColor: false }), /up to date/);
-  assert.match(updateLine({ local: '1.0.3', latest: null, useColor: false }), /unavailable/);
+test('updateLine shows an upgrade, up-to-date, or unknown state', () => {
+  const up = updateLine({ local: '1.0.3', latest: '1.1.0', useColor: false });
+  assert.match(up, /⬆ Update 1\.1\.0 available/);
+  assert.match(up, /\(run 'snapstack restart' to update\)/);
+  assert.match(updateLine({ local: '1.1.0', latest: '1.1.0', useColor: false }), /^ {2}✓ Up to date$/);
+  assert.match(updateLine({ local: '1.0.3', latest: null, useColor: false }), /⚠ Update check unavailable/);
 });
 
 test('renderReport surfaces both badges, health detail, and the command list', () => {
@@ -55,20 +56,22 @@ test('renderReport surfaces both badges, health detail, and the command list', (
   const health = { ok: true, version: '1.0.3', protocol: 1 };
   const out = renderReport({ service, health, count: 3, dir: '/home/u/.snapstack', useColor: false });
 
-  assert.match(out, /Service\s+● running/);
-  assert.match(out, /com\.snapstack\.server · pid 1199/); // pid shown when running
-  assert.match(out, /Server\s+● healthy/);
-  assert.match(out, /version 1\.0\.3\s+protocol 1\s+·\s+3 screenshots pending/);
-  assert.match(out, /stack\s+\/home\/u\/\.snapstack/);
-  assert.match(out, /snapstack start \| stop \| restart/);
-  assert.match(out, /snapstack enable \| disable/);
+  assert.match(out, /Service\s+● running \(launchd · com\.snapstack\.server · pid 1199\)/);
+  assert.match(out, /Server\s+● healthy \(http:/);
+  assert.match(out, /Server version\s+1\.0\.3/);
+  assert.match(out, /Protocol version\s+1/);
+  assert.match(out, /Stack\s+\/home\/u\/\.snapstack \(3 screenshots pending\)/);
+  assert.match(out, /^Commands$/m);
+  assert.match(out, /snapstack start \| stop \| restart\s+Control the service/);
+  assert.match(out, /snapstack enable \| disable\s+Start at login/);
+  assert.match(out, /^Updates$/m); // the live update line is appended by runReport
 });
 
 test('renderReport omits the health detail when the server is down', () => {
   const service = { manager: 'systemd', target: 'snapstack.service', enabled: false, running: false };
   const out = renderReport({ service, health: null, count: undefined, dir: '/x', useColor: false });
 
-  assert.match(out, /Server\s+● down\s+→ run 'snapstack enable'/);
-  assert.doesNotMatch(out, /protocol/);
-  assert.match(out, /1 screenshot pending|stack\s+\/x/); // detail block gone, stack dir stays
+  assert.match(out, /Server\s+● down \(→ run 'snapstack enable'\)/);
+  assert.doesNotMatch(out, /Server version|Protocol version/); // no health → no version rows
+  assert.match(out, /Stack\s+\/x$/m); // stack dir stays, no pending suffix when down
 });
