@@ -76,8 +76,13 @@ Day-to-day:
 ```bash
 snapstack                            # status report: service + server health, update check
 snapstack start | stop | restart     # control the running service (this session)
+snapstack update                     # update the CLI (npm i -g) + restart the server on the latest
 snapstack run                        # run the daemon in the foreground (no auto-start)
 ```
+
+Two pieces can drift, with one fix: the **daemon** self-updates on each (re)start/login, while the **global CLI** (the
+`snapstack` command itself) only changes when you reinstall it. `snapstack update` brings **both** to the latest in one
+go — `npm i -g snapstack-server@latest` then a restart. (On Windows, run it in an Administrator terminal.)
 
 The full end-to-end walkthrough (idiomatic install paths, MCP client registration, the extension) is in the
 **[extension README](https://github.com/bgaze/snapstack-extension)**.

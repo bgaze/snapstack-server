@@ -43,12 +43,19 @@ test('serverBadge is healthy with /health, else points at the right remedy', () 
   assert.match(serverBadge(null, { enabled: false, running: false }).hint, /enable/);
 });
 
-test('updateLine shows an upgrade, up-to-date, or unknown state', () => {
-  const up = updateLine({ local: '1.0.3', latest: '1.1.0', useColor: false });
-  assert.match(up, /⬆ Update 1\.1\.0 available/);
-  assert.match(up, /\(run 'snapstack restart' to update\)/);
-  assert.match(updateLine({ local: '1.1.0', latest: '1.1.0', useColor: false }), /^ {2}✓ Up to date$/);
-  assert.match(updateLine({ local: '1.0.3', latest: null, useColor: false }), /⚠ Update check unavailable/);
+test('updateLine flags an upgrade when the CLI or the daemon trails latest', () => {
+  // CLI behind (daemon already current)
+  const cliBehind = updateLine({ cli: '1.1.0', daemon: '1.2.0', latest: '1.2.0', useColor: false });
+  assert.match(cliBehind, /⬆ Update 1\.2\.0 available/);
+  assert.match(cliBehind, /\(run 'snapstack update' to update\)/);
+  // daemon behind (CLI current)
+  assert.match(updateLine({ cli: '1.2.0', daemon: '1.1.0', latest: '1.2.0', useColor: false }), /⬆ Update 1\.2\.0 available/);
+  // both current → up to date
+  assert.match(updateLine({ cli: '1.2.0', daemon: '1.2.0', latest: '1.2.0', useColor: false }), /^ {2}✓ Up to date$/);
+  // server down (no daemon), CLI current → still up to date
+  assert.match(updateLine({ cli: '1.2.0', daemon: undefined, latest: '1.2.0', useColor: false }), /✓ Up to date/);
+  // registry unreachable
+  assert.match(updateLine({ cli: '1.2.0', daemon: '1.2.0', latest: null, useColor: false }), /⚠ Update check unavailable/);
 });
 
 test('renderReport surfaces both badges, health detail, and the command list', () => {

@@ -7,6 +7,7 @@ import { config } from './lib/config.js';
 //   mcp                  the stdio MCP front-end (spawned by the LLM client)
 //   start | stop | restart   transient control of the auto-start service
 //   enable | disable     register / remove start-at-login
+//   update               update the global CLI + restart the daemon
 //   --version | --help
 
 const HELP = `SnapStack — local browser-screenshot pipe for MCP clients.
@@ -16,6 +17,7 @@ Usage: snapstack <command>
   (none), status        Health report: service + server status, update check
   start | stop | restart  Control the running service (this session)
   enable | disable      Register / remove start-at-login (+ crash-restart, self-update)
+  update                Update the CLI + server to the latest published version
   run                   Run the capture + MCP daemon in the foreground
   mcp                   Run the stdio MCP front-end (for LLM-client config)
   --version, -v         Print the version
@@ -31,6 +33,13 @@ async function control(cmd) {
   const svc = await import('./lib/service.js');
   if (cmd === 'enable') return svc.enable();
   if (cmd === 'disable') return svc.disable();
+  if (cmd === 'update') {
+    const r = svc.update();
+    if (!r.cliUpdated) return fail('Could not update the CLI — on Windows, run in an Administrator terminal.');
+    if (r.restarted) console.log('snapstack updated — CLI + server now on the latest version.');
+    else console.log("snapstack CLI updated. Run 'snapstack enable' to (re)start the server on the new version.");
+    return;
+  }
 
   if (cmd === 'start' && !svc.serviceStatus().enabled) {
     return fail("Service is not enabled — run 'snapstack enable' first.");
@@ -56,6 +65,7 @@ switch (cmd) {
   }
   case 'enable':
   case 'disable':
+  case 'update':
   case 'start':
   case 'stop':
   case 'restart':
