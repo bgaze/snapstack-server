@@ -133,12 +133,12 @@ restores the defaults above.
 
 ## Troubleshooting
 
-- **"Capture server not started"** (in the extension): run `snapstack start` (or `snapstack run` in the foreground),
+- **Capture server not started message in the extension:** run `snapstack start` (or `snapstack run` in the foreground),
   or check the auto-start with `snapstack`. Test: `curl http://127.0.0.1:4123/health`.
-- **Port already in use** (`EADDRINUSE`): set `SNAPSTACK_PORT` to another value.
-- **The client doesn't see the tools**: the server must run **before** the MCP client starts; check the config
+- **Port already in use (`EADDRINUSE`):** set `SNAPSTACK_PORT` to another value.
+- **The client doesn't see the tools:** the server must run **before** the MCP client starts; check the config
   (`type: "http"`, correct URL). Direct test: `curl http://127.0.0.1:4123/count`.
-- **Inspect the stack**: `ls ~/.snapstack` (image files + human-readable `.json`).
+- **Inspect the stack:** `ls ~/.snapstack` (image files + human-readable `.json`).
 
 ## Support
 
