@@ -40,7 +40,8 @@ test('Windows launcher mirrors the POSIX contract', () => {
   const ps = launcherPs1({ dir: 'C:\\app\\snapstack', binDir: 'C:\\nodejs' });
   assert.match(ps, /\$env:Path = "C:\\nodejs;\$env:Path"/);
   assert.match(ps, /npm install --prefix \$prefix snapstack-server@latest/);
-  assert.match(ps, /node_modules\\\.bin\\snapstack-server\.cmd/);
+  // node.exe called directly (not .cmd) so no cmd.exe CREATE_NEW_CONSOLE popup
+  assert.match(ps, /C:\\nodejs\\node\.exe.*snapstack-server\\snapstack-server\.js/);
 });
 
 test('launchd plist points at /bin/sh + the generated launcher', () => {
