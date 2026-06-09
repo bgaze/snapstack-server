@@ -19,9 +19,9 @@ import {
 const home = '/home/u';
 
 test('appDir picks the stable per-OS install location', () => {
-  assert.equal(appDir('darwin', {}, home), '/home/u/Library/Application Support/snapstack');
-  assert.equal(appDir('linux', {}, home), '/home/u/.local/share/snapstack');
-  assert.equal(appDir('linux', { XDG_DATA_HOME: '/xdg' }, home), '/xdg/snapstack');
+  assert.equal(appDir('darwin', {}, home), path.join(home, 'Library', 'Application Support', 'snapstack'));
+  assert.equal(appDir('linux', {}, home), path.join(home, '.local', 'share', 'snapstack'));
+  assert.equal(appDir('linux', { XDG_DATA_HOME: '/xdg' }, home), path.join('/xdg', 'snapstack'));
   assert.equal(appDir('win32', { LOCALAPPDATA: 'C:\\Users\\u\\AppData\\Local' }, home), path.join('C:\\Users\\u\\AppData\\Local', 'snapstack'));
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "snapstack-server",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": false,
   "description": "Local always-on server for SnapStack: browser capture intake + MCP (Streamable HTTP) over 127.0.0.1",
   "mcpName": "io.github.bgaze/snapstack-server",
