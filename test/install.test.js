@@ -6,6 +6,7 @@ import {
   nodeBinDir,
   launcherSh,
   launcherPs1,
+  launcherVbs,
   plist,
   systemdUnit,
 } from '../lib/install.js';
@@ -42,6 +43,14 @@ test('Windows launcher mirrors the POSIX contract', () => {
   assert.match(ps, /npm install --prefix \$prefix snapstack-server@latest/);
   // node.exe called directly (not .cmd) so no cmd.exe CREATE_NEW_CONSOLE popup
   assert.match(ps, /C:\\nodejs\\node\.exe.*snapstack-server\\snapstack-server\.js/);
+});
+
+test('VBScript shim runs PowerShell hidden via WshShell.Run style 0', () => {
+  const vbs = launcherVbs({ launcher: 'C:\\app\\snapstack\\snapstack-launch.ps1' });
+  assert.match(vbs, /WScript\.Shell/);
+  assert.match(vbs, /WindowStyle Hidden/);
+  assert.match(vbs, /snapstack-launch\.ps1/);
+  assert.match(vbs, /, 0, True/); // SW_HIDE, bWaitOnReturn
 });
 
 test('launchd plist points at /bin/sh + the generated launcher', () => {
