@@ -17,7 +17,8 @@
       "runtimeHint": "npx",
       "transport": { "type": "stdio" },
       "packageArguments": [
-        { "type": "positional", "value": "snapstack-mcp" }
+        { "type": "positional", "value": "snapstack" },
+        { "type": "positional", "value": "mcp" }
       ]
     }
   ]

@@ -8,12 +8,12 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { makePng } from './fixtures.js';
 
-// End-to-end check of the stdio front-end (snapstack-mcp.js): spawn the real bin
+// End-to-end check of the stdio front-end (`snapstack mcp`): spawn the real bin
 // and drive it with the MCP SDK client over stdin/stdout. Exercises the shared
 // factory (lib/mcp-tools.js) over the same on-disk stack — no HTTP, no registry.
 
 const serverRoot = fileURLToPath(new URL('..', import.meta.url));
-const bin = path.join(serverRoot, 'snapstack-mcp.js');
+const bin = path.join(serverRoot, 'snapstack.js');
 
 // Seed a capture in an isolated stack dir, then point the spawned bin at it.
 const dir = await mkdtemp(path.join(os.tmpdir(), 'snapstack-stdio-'));
@@ -24,7 +24,7 @@ await stack.write(makePng(120, 80), 'image/png', { url: 'http://example.test', t
 
 const transport = new StdioClientTransport({
   command: process.execPath,
-  args: [bin],
+  args: [bin, 'mcp'],
   env: { SNAPSTACK_DIR: dir, PATH: process.env.PATH },
 });
 const client = new Client({ name: 'snapstack-test', version: '1.0.0' });

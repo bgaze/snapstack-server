@@ -9,12 +9,12 @@ import {
   launcherVbs,
   plist,
   systemdUnit,
-} from '../lib/install.js';
+} from '../lib/service.js';
 
 // The auto-start unit needs to run with a minimal PATH, so node/npm must be
-// resolved to an absolute dir at install time and the run step must work offline.
-// These cover the pure content generators; the side-effecting install/uninstall
-// (launchctl/systemctl/scheduled-task) are exercised by hand per OS.
+// resolved to an absolute dir at enable time and the run step must work offline.
+// These cover the pure content generators; the side-effecting enable/disable and
+// start/stop/restart (launchctl/systemctl/scheduled-task) are exercised by hand.
 
 const home = '/home/u';
 
@@ -34,7 +34,7 @@ test('POSIX launcher updates best-effort then runs the local install (offline-sa
   assert.match(sh, /^#!\/bin\/sh/);
   assert.match(sh, /export PATH="\/usr\/local\/bin:\$PATH"/); // absolute node/npm dir
   assert.match(sh, /npm install --prefix "\$PREFIX" snapstack-server@latest .*\|\| true/); // best-effort
-  assert.match(sh, /exec "\$PREFIX\/node_modules\/\.bin\/snapstack-server"/); // run local, offline-safe
+  assert.match(sh, /exec "\$PREFIX\/node_modules\/\.bin\/snapstack" run/); // run local daemon, offline-safe
 });
 
 test('Windows launcher mirrors the POSIX contract', () => {
@@ -42,7 +42,7 @@ test('Windows launcher mirrors the POSIX contract', () => {
   assert.match(ps, /\$env:Path = "C:\\nodejs;\$env:Path"/);
   assert.match(ps, /npm install --prefix \$prefix snapstack-server@latest/);
   // node.exe called directly (not .cmd) so no cmd.exe CREATE_NEW_CONSOLE popup
-  assert.match(ps, /C:\\nodejs\\node\.exe.*snapstack-server\\snapstack-server\.js/);
+  assert.match(ps, /C:\\nodejs\\node\.exe.*snapstack-server\\snapstack\.js" run/);
 });
 
 test('VBScript shim runs PowerShell hidden via WshShell.Run style 0', () => {

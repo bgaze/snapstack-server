@@ -51,21 +51,30 @@ One always-on process serves both the extension (capture) and your MCP client, d
 
 ## Install & run
 
-Run it once in the foreground:
+Install the package globally — it exposes a single `snapstack` command:
 
 ```bash
-npx -y snapstack-server@latest        # → SnapStack server listening on http://127.0.0.1:4123
+npm i -g snapstack-server
 ```
 
-For start-at-login + crash-restart + self-update, install the auto-start unit (launchd on macOS, systemd `--user` on
-Linux, a logon scheduled task on Windows):
+Enable start-at-login + crash-restart + self-update (launchd on macOS, systemd `--user` on Linux, a logon scheduled
+task on Windows):
 
 ```bash
-npx -y snapstack-server@latest install     # register auto-start; uninstall with `… uninstall`
+snapstack enable        # register auto-start   ·   snapstack disable to remove
 ```
 
-The unit runs a best-effort `npm install --prefix <appDir> snapstack-server@latest` then launches the locally installed
-copy — so the server self-updates on each (re)start, and still starts offline once installed. No git involved.
+The auto-start launcher runs a best-effort `npm install --prefix <appDir> snapstack-server@latest` then launches the
+locally installed copy — so the server self-updates on each (re)start, and still starts offline once installed. No git
+involved.
+
+Day-to-day:
+
+```bash
+snapstack                            # status report: service + server health, update check
+snapstack start | stop | restart     # control the running service (this session)
+snapstack run                        # run the daemon in the foreground (no auto-start)
+```
 
 The full end-to-end walkthrough (idiomatic install paths, MCP client registration, the extension) is in the
 **[extension README](https://github.com/bgaze/snapstack-extension)**.
@@ -80,10 +89,10 @@ SnapStack speaks two MCP transports over the same on-disk stack — pick whichev
 ```
 ```jsonc
 // stdio (the client spawns the process)
-{ "command": "npx", "args": ["-y", "-p", "snapstack-server", "snapstack-mcp"] }
+{ "command": "npx", "args": ["-y", "-p", "snapstack-server", "snapstack", "mcp"] }
 ```
 
-The HTTP `/mcp` endpoint is **stateless** (a fresh server + transport per request); the stdio front-end (`snapstack-mcp`)
+The HTTP `/mcp` endpoint is **stateless** (a fresh server + transport per request); the stdio front-end (`snapstack mcp`)
 is spawned on demand and reads the same `~/.snapstack` stack. Capture intake (`/push`) always stays in the running
 server, independent of either MCP front-end.
 
@@ -130,8 +139,8 @@ restores the defaults above.
 
 ## Troubleshooting
 
-- **"Capture server not started"** (in the extension): start the server (`npm start`) or check the auto-start.
-  Test: `curl http://127.0.0.1:4123/health`.
+- **"Capture server not started"** (in the extension): run `snapstack start` (or `snapstack run` in the foreground),
+  or check the auto-start with `snapstack`. Test: `curl http://127.0.0.1:4123/health`.
 - **Port already in use** (`EADDRINUSE`): set `SNAPSTACK_PORT` to another value.
 - **The client doesn't see the tools**: the server must run **before** the MCP client starts; check the config
   (`type: "http"`, correct URL). Direct test: `curl http://127.0.0.1:4123/count`.

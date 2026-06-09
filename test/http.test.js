@@ -15,7 +15,7 @@ const { config } = await import('../lib/config.js');
 const { handleCaptureRequest } = await import('../lib/capture-routes.js');
 const { handleMcpRequest } = await import('../lib/mcp-routes.js');
 
-// Same dispatch as snapstack-server.js, so the test exercises real routing.
+// Same dispatch as lib/server.js (`snapstack run`), so the test exercises real routing.
 const server = http.createServer((req, res) => {
   let pathname = '/';
   try {

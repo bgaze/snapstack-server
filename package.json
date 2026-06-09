@@ -35,19 +35,17 @@
     "node": ">=18"
   },
   "bin": {
-    "snapstack-server": "snapstack-server.js",
-    "snapstack-mcp": "snapstack-mcp.js"
+    "snapstack": "snapstack.js"
   },
   "files": [
-    "snapstack-server.js",
-    "snapstack-mcp.js",
+    "snapstack.js",
     "lib/",
     "deploy/mcp.json",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "start": "node snapstack-server.js",
+    "start": "node snapstack.js run",
     "test": "node --test",
     "lint": "eslint ."
   },
