@@ -28,11 +28,11 @@ MCP-capable LLM client over **Streamable HTTP**. It listens only on `127.0.0.1` 
 One always-on process serves both the extension (capture) and your MCP client, decoupled by a folder on disk.
 
 ```
-[MV3 extension]  --POST /push (bytes)-->  ┐
-                                          ▼
-                            [SnapStack server]   127.0.0.1:4123
-                               ├─ writes ─►  ~/.snapstack/   (stack on disk)
-                               └─ MCP /mcp (HTTP)  ◄── MCP client
+[MV3 extension]  --POST /push (bytes) ┐
+                                      ▼
+                              [SnapStack server - 127.0.0.1:4123]   
+                                 ├─ writes           →  stack on disk
+                                 └─ MCP /mcp (HTTP)  ←  MCP client
 ```
 
 - **Capture** — the extension encodes the shot as WebP (PNG fallback), downscales it, and POSTs it here.
@@ -51,27 +51,18 @@ One always-on process serves both the extension (capture) and your MCP client, d
 
 ## Install & run
 
-Install the package globally — it exposes a single `snapstack` command:
+> On Windows, **use an Administrator terminal**, otherwise the global npm install and the scheduled-task registration
+> may get rejected.
 
-```bash
-npm i -g snapstack-server
-```
+The server ships on npm and installation is straightforward on macOS, Linux and Windows:
 
-Enable start-at-login + crash-restart + self-update (launchd on macOS, systemd `--user` on Linux, a logon scheduled
-task on Windows):
+1. Install globally: `npm i -g snapstack-server`
+2. Enable background service: `snapstack enable`
 
-```bash
-snapstack enable        # register auto-start   ·   snapstack disable to remove
-```
+SnapStack auto-starts on login, restarts on crash, and updates itself on each launch.  
+To check its status or if an update is available, simply run `snapstack` in your terminal.
 
-> **Windows:** run the install (`npm i -g` + `snapstack enable`) in an **Administrator** terminal (PowerShell *Run as
-> administrator*) — the global install and scheduled-task registration need elevation, or they get rejected.
-
-The auto-start launcher runs a best-effort `npm install --prefix <appDir> snapstack-server@latest` then launches the
-locally installed copy — so the server self-updates on each (re)start, and still starts offline once installed. No git
-involved.
-
-Day-to-day:
+Available commands:
 
 ```bash
 snapstack                            # status report: service + server health, update check
@@ -80,9 +71,8 @@ snapstack update                     # update the CLI (npm i -g) + restart the s
 snapstack run                        # run the daemon in the foreground (no auto-start)
 ```
 
-Two pieces can drift, with one fix: the **daemon** self-updates on each (re)start/login, while the **global CLI** (the
-`snapstack` command itself) only changes when you reinstall it. `snapstack update` brings **both** to the latest in one
-go — `npm i -g snapstack-server@latest` then a restart. (On Windows, run it in an Administrator terminal.)
+The **daemon** self-updates on each (re)start/login; the **global CLI** (the `snapstack` command) does not.
+Run `snapstack update` to bring **both** to the latest in one go.
 
 The full end-to-end walkthrough (idiomatic install paths, MCP client registration, the extension) is in the
 **[extension README](https://github.com/bgaze/snapstack-extension)**.
@@ -95,29 +85,25 @@ SnapStack speaks two MCP transports over the same on-disk stack — pick whichev
 // HTTP (server already running) — register http://127.0.0.1:4123/mcp; copy deploy/mcp.json
 { "type": "http", "url": "http://127.0.0.1:4123/mcp" }
 ```
+
 ```jsonc
 // stdio (the client spawns the process)
 { "command": "npx", "args": ["-y", "-p", "snapstack-server", "snapstack", "mcp"] }
 ```
 
-The HTTP `/mcp` endpoint is **stateless** (a fresh server + transport per request); the stdio front-end (`snapstack mcp`)
-is spawned on demand and reads the same `~/.snapstack` stack. Capture intake (`/push`) always stays in the running
-server, independent of either MCP front-end.
+The HTTP `/mcp` endpoint is **stateless** (a fresh server + transport per request); the stdio front-end
+(`snapstack mcp`) is spawned on demand and reads the same `~/.snapstack` stack.  
+Capture intake (`/push`) always stays in the running server, independent of either MCP front-end.
 
 ### Exposed tools
 
-| Tool                | Description                                                                                                                                                                          |
-|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Tool                | Description                                                                                                                                                                         |
+|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `get_screenshots`   | Lists pending captures as a JSON manifest (stable number, absolute path, dimensions, metadata) — **no image bytes, no deletion**. Pass `numbers` (e.g. `[1,3]`) to list only those. |
-| `clear_screenshots` | Deletes captures. Pass `numbers` to delete specific ones; omit to clear the whole stack. Numbering restarts at `01` once empty.                                                      |
+| `clear_screenshots` | Deletes captures. Pass `numbers` to delete specific ones; omit to clear the whole stack. Numbering restarts at `01` once empty.                                                     |
 | `count_screenshots` | Number of pending captures, without retrieving them.                                                                                                                                |
 
-`get_screenshots` and `count_screenshots` are **read-only**; only `clear_screenshots` is **destructive**. To run a
-tool without a per-call confirmation, add its identifier to your client's allow-list (for Claude Code:
-`mcp__snapstack__<tool>` in `permissions.allow`).
-
-> **Token cost**: `get_screenshots` returns only the manifest, so it stays cheap whatever the stack size — the client
-> then reads just the files it needs. WebP + downscaling keep those reads light.
+`get_screenshots` and `count_screenshots` are **read-only**; only `clear_screenshots` is **destructive**. 
 
 ## Configuration
 
@@ -134,12 +120,12 @@ The encoding/capture settings are **owned by the server** and stored in `~/.snap
 edit applies to **every browser** running the extension. They are edited from the extension's **options page** — not
 an environment variable — and fetched by the extension before each capture.
 
-| Key         | Default | Meaning                                              |
-|-------------|---------|------------------------------------------------------|
-| `format`    | `webp`  | Image format: `webp`, `png` or `jpg`.                |
-| `quality`   | `0.85`  | Lossy quality (`0`–`1`; the extension UI shows it as a percentage). |
+| Key         | Default | Meaning                                                                   |
+|-------------|---------|---------------------------------------------------------------------------|
+| `format`    | `webp`  | Image format: `webp`, `png` or `jpg`.                                     |
+| `quality`   | `0.85`  | Lossy quality (`0`–`1`; the extension UI shows it as a percentage).       |
 | `maxWidth`  | `1568`  | Downscale captures wider than this to this width in px (`0` = no resize). |
-| `maxSlices` | `50`    | Full-page capture: hard cap on stitched slices.      |
+| `maxSlices` | `50`    | Full-page capture: hard cap on stitched slices.                           |
 
 Two endpoints back it: `GET /config` returns the effective policy; `POST /config` validates and replaces it (host- +
 CORS-guarded like every capture route). The file is a non-image, so a stack clear never touches it; deleting it just
