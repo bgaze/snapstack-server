@@ -140,6 +140,11 @@ restores the defaults above.
   (`type: "http"`, correct URL). Direct test: `curl http://127.0.0.1:4123/count`.
 - **Inspect the stack**: `ls ~/.snapstack` (image files + human-readable `.json`).
 
+## Support
+
+- **A question or an idea?** → [GitHub Discussions](https://github.com/bgaze/snapstack-server/discussions)
+- **Found a bug?** → [open an issue](https://github.com/bgaze/snapstack-server/issues)
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
