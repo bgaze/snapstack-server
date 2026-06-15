@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/100%25-local-success" alt="100% local">
   <a href="https://www.npmjs.com/package/snapstack-server"><img src="https://img.shields.io/npm/v/snapstack-server?label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/snapstack-server"><img src="https://img.shields.io/npm/dm/snapstack-server?label=downloads" alt="npm downloads"></a>
+  <a href="https://glama.ai/mcp/servers/bgaze/snapstack-server"><img src="https://glama.ai/mcp/servers/bgaze/snapstack-server/badges/score.svg" alt="Glama score"></a>
 </p>
 
 <p align="center">
@@ -136,6 +137,11 @@ restores the defaults above.
 - **Capture server not started message in the extension:** run `snapstack start` (or `snapstack run` in the foreground),
   or check the auto-start with `snapstack`. Test: `curl http://127.0.0.1:4123/health`.
 - **Port already in use (`EADDRINUSE`):** set `SNAPSTACK_PORT` to another value.
+- **`snapstack: command not found` after switching Node version** (nvm, fnm, volta, Laravel Herd, nvm-windows): `npm i -g`
+  drops the `snapstack` command in the global bin of the Node version that was active at install time only, so switching
+  versions hides it. This is how npm globals work, not a SnapStack bug — the **background service is unaffected and keeps
+  capturing**; only the CLI command disappears. Fix: re-run `npm i -g snapstack-server` under the current Node version (or
+  switch back to the one used at install).
 - **The client doesn't see the tools:** the server must run **before** the MCP client starts; check the config
   (`type: "http"`, correct URL). Direct test: `curl http://127.0.0.1:4123/count`.
 - **Inspect the stack:** `ls ~/.snapstack` (image files + human-readable `.json`).
