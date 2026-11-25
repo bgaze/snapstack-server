@@ -101,7 +101,8 @@ snapstack                                        # the "Watch folder" row shows 
 
 The **guided setup** proposes the right folder for your OS, creates it, checks that the **background service** can
 actually read it, and finally offers a live test (take a screenshot, see it land in the stack). On macOS it can also
-point the screenshot tool at that folder — only after you say yes, showing the command to undo it.
+point the screenshot tool at that folder — only after you say yes, showing the command to undo it. Run again while a
+folder is watched, it first offers to stop watching; answer no to change the current setup.
 
 - **Which folder.** macOS: the `com.apple.screencapture` `location`, else the Desktop. Windows: the *Screenshots*
   folder (Win+PrtScn; Snipping Tool auto-save). Linux: `Pictures/Screenshots` (GNOME; KDE Spectacle is configurable).
@@ -109,6 +110,9 @@ point the screenshot tool at that folder — only after you say yes, showing the
   on what was granted on your Mac; the setup checks it for real). The safe choice is another folder (the setup proposes
   `~/Pictures/Screenshots`), with macOS pointed at it:
   `defaults write com.apple.screencapture location ~/Pictures/Screenshots`, or Cmd+Shift+5 → Options → Other Location.
+- **macOS floating thumbnail:** macOS writes a screenshot only once its thumbnail goes away (~5 s). For an immediate
+  arrival in the stack, turn it off: Cmd+Shift+5 → Options → uncheck *Show Floating Thumbnail*, or
+  `defaults write com.apple.screencapture show-thumbnail -bool false`. The setup reminds you while it is on.
 - **What is picked up:** new image files only (`png`, `jpg`, `gif`, `webp`, up to 50 MB). Files already present when
   you enable the watch, hidden files (macOS writes `.Capture…` first), videos and sub-folders are ignored. An image
   that cannot be converted is stacked as-is.

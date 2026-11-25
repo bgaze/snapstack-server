@@ -20,14 +20,17 @@ test.after(async () => {
 function scriptedIo(answers) {
   const lines = [];
   const prompts = [];
+  const transcript = [];
   return {
     lines,
     prompts,
+    transcript,
     text: () => lines.join('\n'),
-    log: (s = '') => lines.push(s),
+    log: (s = '') => { lines.push(s); transcript.push({ line: s }); },
     close() {},
     ask(q, { signal } = {}) {
       prompts.push(q);
+      if (q !== '') transcript.push({ prompt: q });
       if (q === '') {
         return new Promise((_, reject) => signal?.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))));
       }
@@ -37,16 +40,24 @@ function scriptedIo(answers) {
   };
 }
 
-// Fake macOS `defaults` backed by a variable.
-function fakeDefaults(initial) {
-  const prefs = { location: initial };
+// Fake macOS `defaults` (com.apple.screencapture keys) backed by an object.
+function fakeDefaults(location, extra = {}) {
+  const prefs = { location, ...extra };
   const exec = (cmd, args) => {
     if (cmd !== 'defaults') return { code: 1, stdout: '' };
-    if (args[0] === 'read') return prefs.location ? { code: 0, stdout: prefs.location } : { code: 1, stdout: '' };
-    if (args[0] === 'write') { prefs.location = args[3]; return { code: 0, stdout: '' }; }
+    const key = args[2];
+    if (args[0] === 'read') return prefs[key] != null ? { code: 0, stdout: String(prefs[key]) } : { code: 1, stdout: '' };
+    if (args[0] === 'write') { prefs[key] = args[args.length - 1]; return { code: 0, stdout: '' }; }
     return { code: 1, stdout: '' };
   };
   return { prefs, exec };
+}
+
+// Every question opens its own block: what was printed just before it is a blank line.
+function assertBlocksIsolated(io) {
+  io.transcript.forEach((entry, i) => {
+    if (entry.prompt) assert.equal(io.transcript[i - 1]?.line, '', `no blank line before: ${entry.prompt}`);
+  });
 }
 
 // Fake daemon: answers the first activation it sees with `verdict`, then
@@ -67,6 +78,7 @@ function fakeDaemon(verdict, { ingest = false } = {}) {
 const UP = async () => ({ ok: true, version: '1.3.0' });
 
 test('macOS happy path: proposed folder created, redirect on "y", undo shown, live test', async () => {
+  await ws.writeWatchSettings(ws.DEFAULT_SETTINGS); // first run
   const { prefs, exec } = fakeDefaults('~/Downloads/screenshots'); // missing → Desktop
   const stop = fakeDaemon({ status: 'watching', error: null }, { ingest: true });
   const io = scriptedIo(['', 'y', '', 'y']); // folder default, redirect yes, keep original, test yes
@@ -83,9 +95,61 @@ test('macOS happy path: proposed folder created, redirect on "y", undo shown, li
   assert.match(io.text(), /Got it: #03 \(from Shot\.png\)/);
   const s = await ws.readWatchSettings();
   assert.deepEqual([s.enabled, s.dir, s.deleteOriginal], [true, proposed, false]);
+  assertBlocksIsolated(io);
+  // Thumbnail on (macOS default) → closing tip with both ways to turn it off.
+  assert.match(io.lines.at(-1), /defaults write com\.apple\.screencapture show-thumbnail -bool false/);
+  assert.match(io.text(), /Show Floating Thumbnail/);
+});
+
+test('macOS: no thumbnail tip once the thumbnail is off', async () => {
+  await ws.writeWatchSettings(ws.DEFAULT_SETTINGS);
+  const { exec } = fakeDefaults(null, { 'show-thumbnail': '0' });
+  const stop = fakeDaemon({ status: 'watching', error: null });
+  const io = scriptedIo(['', 'n', '', 'n']);
+  const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
+  stop();
+  assert.equal(code, 0, io.text());
+  assert.doesNotMatch(io.text(), /Tip:/);
+});
+
+test('re-run on an active watch: "y" to stop turns it off, nothing else asked', async () => {
+  const dir = path.join(home, 'Active');
+  await ws.writeWatchSettings({ enabled: true, dir, deleteOriginal: true, activatedAt: 1 });
+  const io = scriptedIo(['y']);
+  const code = await runWizard({ io, platform: 'darwin', home, exec: fakeDefaults(null).exec, probe: UP });
+  assert.equal(code, 0, io.text());
+  assert.equal(io.prompts.length, 1);
+  assert.match(io.prompts[0], /^Stop watching .*Active\? \[y\/N\]/);
+  const s = await ws.readWatchSettings();
+  assert.deepEqual([s.enabled, s.dir], [false, dir]);
+});
+
+test('re-run on an active watch: "n" reconfigures, defaults are the current setting', async () => {
+  const dir = path.join(home, 'Active');
+  await ws.writeWatchSettings({ enabled: true, dir, deleteOriginal: true, activatedAt: 1 });
+  const stop = fakeDaemon({ status: 'watching', error: null });
+  const io = scriptedIo(['n', '', 'n', '', 'n']); // keep watching, same folder, no redirect, keep default, no test
+  const code = await runWizard({ io, platform: 'darwin', home, exec: fakeDefaults(null, { 'show-thumbnail': '0' }).exec, probe: UP });
+  stop();
+  assert.equal(code, 0, io.text());
+  assert.ok(io.prompts.some((p) => p === `Folder to watch [${dir}]: `), io.prompts.join(' | '));
+  assert.ok(io.prompts.some((p) => /Keep the original .*\[y\/N\]/.test(p))); // current: originals deleted
+  const s = await ws.readWatchSettings();
+  assert.deepEqual([s.enabled, s.dir, s.deleteOriginal], [true, dir, true]);
+  assertBlocksIsolated(io);
+});
+
+test('after a watch off, the OS proposal is offered again (not the old folder)', async () => {
+  await ws.writeWatchSettings({ enabled: false, dir: path.join(home, 'Documents'), deleteOriginal: false, activatedAt: 1 });
+  const stop = fakeDaemon({ status: 'watching', error: null });
+  const io = scriptedIo(['', 'n', '', 'n']);
+  await runWizard({ io, platform: 'darwin', home, exec: fakeDefaults(null).exec, probe: UP });
+  stop();
+  assert.equal(io.prompts.find((p) => p.startsWith('Folder')), `Folder to watch [${path.join(home, 'Pictures', 'Screenshots')}]: `);
 });
 
 test('macOS: declining the redirect changes nothing and prints the command', async () => {
+  await ws.writeWatchSettings(ws.DEFAULT_SETTINGS); // first run
   const { prefs, exec } = fakeDefaults(null);
   const stop = fakeDaemon({ status: 'watching', error: null });
   const io = scriptedIo(['', 'n', 'n', 'n']); // default folder, no redirect, delete original, no test
@@ -98,6 +162,7 @@ test('macOS: declining the redirect changes nothing and prints the command', asy
 });
 
 test('a protected folder gets a note (no extra question); an error verdict offers another folder', async () => {
+  await ws.writeWatchSettings(ws.DEFAULT_SETTINGS); // first run
   const { exec } = fakeDefaults(null);
   const stop = fakeDaemon({ status: 'error', error: { code: 'EPERM' } });
   const io = scriptedIo([
