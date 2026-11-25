@@ -61,18 +61,28 @@ function assertBlocksIsolated(io) {
 }
 
 // Fake daemon: answers the first activation it sees with `verdict`, then
-// (optionally) reports one ingested screenshot.
+// (optionally) reports one ingested screenshot. Ticks never overlap, and the
+// returned stop() waits for the one in flight — nothing leaks into the next test.
 function fakeDaemon(verdict, { ingest = false } = {}) {
-  const timer = setInterval(async () => {
+  let inFlight = null;
+  let stopped = false;
+  const tick = async () => {
     const s = await ws.readWatchSettings();
     const st = await ws.readWatchState();
-    if (!s.enabled || st?.activatedAt === s.activatedAt) return;
+    if (stopped || !s.enabled || st?.activatedAt === s.activatedAt) return;
     await ws.writeWatchState({
       activatedAt: s.activatedAt, dir: s.dir, ...verdict,
       lastIngest: ingest ? { number: 3, name: '03 x.webp', source: 'Shot.png', at: s.activatedAt + 50 } : null,
     });
+  };
+  const timer = setInterval(() => {
+    if (!inFlight && !stopped) inFlight = tick().finally(() => { inFlight = null; });
   }, 50);
-  return () => clearInterval(timer);
+  return async () => {
+    stopped = true;
+    clearInterval(timer);
+    await inFlight;
+  };
 }
 
 const UP = async () => ({ ok: true, version: '1.3.0' });
@@ -83,7 +93,7 @@ test('macOS happy path: proposed folder created, redirect on "y", undo shown, li
   const stop = fakeDaemon({ status: 'watching', error: null }, { ingest: true });
   const io = scriptedIo(['', 'y', 'y', '', 'y']); // folder default, redirect yes, thumbnail off yes, keep original, test yes
   const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
-  stop();
+  await stop();
 
   const proposed = path.join(home, 'Pictures', 'Screenshots');
   assert.equal(code, 0, io.text());
@@ -109,7 +119,7 @@ test('macOS: no thumbnail question once the thumbnail is off', async () => {
   const stop = fakeDaemon({ status: 'watching', error: null });
   const io = scriptedIo(['', 'n', '', 'n']);
   const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
-  stop();
+  await stop();
   assert.equal(code, 0, io.text());
   assert.ok(!io.prompts.some((q) => /thumbnail/.test(q)));
 });
@@ -132,7 +142,7 @@ test('re-run on an active watch: "n" reconfigures, defaults are the current sett
   const stop = fakeDaemon({ status: 'watching', error: null });
   const io = scriptedIo(['n', '', 'n', '', 'n']); // keep watching, same folder, no redirect, keep default, no test
   const code = await runWizard({ io, platform: 'darwin', home, exec: fakeDefaults(null, { 'show-thumbnail': '0' }).exec, probe: UP });
-  stop();
+  await stop();
   assert.equal(code, 0, io.text());
   assert.ok(io.prompts.some((p) => p === `Folder to watch [${dir}]: `), io.prompts.join(' | '));
   assert.ok(io.prompts.some((p) => /Keep the original .*\[y\/N\]/.test(p))); // current: originals deleted
@@ -146,7 +156,7 @@ test('after a watch off, the OS proposal is offered again (not the old folder)',
   const stop = fakeDaemon({ status: 'watching', error: null });
   const io = scriptedIo(['', 'n', 'n', '', 'n']);
   await runWizard({ io, platform: 'darwin', home, exec: fakeDefaults(null).exec, probe: UP });
-  stop();
+  await stop();
   assert.equal(io.prompts.find((p) => p.startsWith('Folder')), `Folder to watch [${path.join(home, 'Pictures', 'Screenshots')}]: `);
 });
 
@@ -156,7 +166,7 @@ test('macOS: declining the redirect changes nothing and prints the command', asy
   const stop = fakeDaemon({ status: 'watching', error: null });
   const io = scriptedIo(['', 'n', 'n', 'n', 'n']); // default folder, no redirect, no thumbnail change, delete original, no test
   const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
-  stop();
+  await stop();
   assert.equal(code, 0, io.text());
   assert.equal(prefs.location, null);
   assert.equal(prefs['show-thumbnail'], undefined);
@@ -175,7 +185,7 @@ test('a protected folder gets a note (no extra question); an error verdict offer
     'n', // do not choose another folder
   ]);
   const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
-  stop();
+  await stop();
   assert.equal(code, 1, io.text());
   assert.match(io.text(), /may keep the background service out/);
   assert.ok(!io.prompts.some((p) => /anyway/i.test(p)));
