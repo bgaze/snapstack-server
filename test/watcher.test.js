@@ -113,17 +113,21 @@ test('deleteOriginal removes the original after the stack write', async () => {
   assert.deepEqual(state.seen, []); // pruned: the original is gone
 });
 
-test('an undecodable image is stored as-is, never lost', async () => {
-  const dir = await freshWatchDir();
-  const t = Date.now();
-  const settings = { enabled: true, dir, deleteOriginal: false, activatedAt: t - 60_000 };
-  await put(dir, 'broken.png', Buffer.from('not really a png'), t - 10_000);
+for (const deleteOriginal of [false, true]) {
+  test(`an undecodable image is stored as-is and its original kept (deleteOriginal: ${deleteOriginal})`, async () => {
+    const dir = await freshWatchDir();
+    const t = Date.now();
+    const settings = { enabled: true, dir, deleteOriginal, activatedAt: t - 60_000 };
+    const p = await put(dir, 'broken.png', Buffer.from('not really a png'), t - 10_000);
 
-  await scanOnce({ settings, state: null, policy: POLICY, now: t, log: quiet });
-  const [entry] = await stack.listDetailed();
-  assert.equal(entry.format, 'image/png');
-  assert.equal(await readFile(entry.path, 'utf8'), 'not really a png');
-});
+    const { state } = await scanOnce({ settings, state: null, policy: POLICY, now: t, log: quiet });
+    const [entry] = await stack.listDetailed();
+    assert.equal(entry.format, 'image/png');
+    assert.equal(await readFile(entry.path, 'utf8'), 'not really a png');
+    assert.equal(await exists(p), true);
+    assert.equal(state.seen.length, 1); // kept → remembered, never re-ingested
+  });
+}
 
 test('an unreadable folder yields an error verdict that keeps what was seen', async () => {
   const t = Date.now();
@@ -166,4 +170,34 @@ test('watching the stack folder itself is refused', async () => {
   const settings = { enabled: true, dir: stackDir, deleteOriginal: false, activatedAt: t };
   const { state } = await scanOnce({ settings, state: null, policy: POLICY, now: t, log: quiet });
   assert.equal(state.error.code, 'ESTACKDIR');
+});
+
+test('the daemon loop stops ingesting once the watch is turned off', async () => {
+  const dir = await freshWatchDir();
+  const ws = await import('../lib/watch-settings.js');
+  const { startWatcher } = await import('../lib/watcher.js');
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const waitFor = async (pred, ms = 8000) => {
+    const end = Date.now() + ms;
+    while (!(await pred())) {
+      if (Date.now() > end) throw new Error('timed out');
+      await sleep(50);
+    }
+  };
+  const w = startWatcher({ log: quiet });
+  try {
+    await ws.writeWatchSettings({ enabled: true, dir, deleteOriginal: false, activatedAt: Date.now() });
+    await waitFor(async () => (await ws.readWatchState())?.status === 'watching');
+    await put(dir, 'on.png', makeRealPng(20, 20), Date.now() - 5_000);
+    await waitFor(async () => (await stack.count()) === 1);
+
+    await ws.writeWatchSettings({ enabled: false, dir, deleteOriginal: false, activatedAt: 1 });
+    await waitFor(async () => (await ws.readWatchState())?.status === 'off');
+    await put(dir, 'off.png', makeRealPng(20, 20), Date.now() - 5_000);
+    await sleep(1500); // > fs.watch debounce + settle + retry
+    assert.equal(await stack.count(), 1);
+    assert.equal((await ws.readWatchState()).lastIngest.source, 'on.png'); // kept while off
+  } finally {
+    w.stop();
+  }
 });

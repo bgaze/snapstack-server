@@ -86,7 +86,8 @@ The full end-to-end walkthrough (idiomatic install paths, MCP client registratio
 
 ## Screenshots from the OS tool (watched folder)
 
-Off by default. Once enabled, the server watches **one folder**: every new image saved there (by the OS screenshot
+Off by default (server 1.3.0+ — run `snapstack update` first if you installed an earlier version). Once enabled, the
+server watches **one folder**: every new image saved there (by the OS screenshot
 tool, or anything else) is downscaled and encoded with the [capture policy](#capture-policy-shared-across-your-browsers)
 — exactly like an extension capture — and added to the stack, where your MCP client reads it. Its `title` is the
 original file name, its `url` is `null`.
@@ -117,7 +118,7 @@ folder is watched, it first offers to stop watching; answer no to change the cur
   yes, showing the undo command).
 - **What is picked up:** new image files only (`png`, `jpg`, `gif`, `webp`, up to 50 MB). Files already present when
   you enable the watch, hidden files (macOS writes `.Capture…` first), videos and sub-folders are ignored. An image
-  that cannot be converted is stacked as-is.
+  that cannot be converted is stacked as-is, and its original is always kept.
 - **Originals** are kept by default; with `--delete-original` they are deleted once safely in the stack.
 - **No restart needed:** the server picks a new setting up within a second. The setting can only be changed from the
   command line — it is never exposed over HTTP, so no web page or extension can make the server read another folder.
