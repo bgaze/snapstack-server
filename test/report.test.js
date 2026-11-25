@@ -6,6 +6,7 @@ import {
   serverBadge,
   updateLine,
   renderReport,
+  watchCell,
 } from '../lib/report.js';
 
 // Pure rendering only: the live IO (probe /health, fetch the registry) is
@@ -81,4 +82,18 @@ test('renderReport omits the health detail when the server is down', () => {
   assert.match(out, /Server\s+● down \(→ run 'snapstack enable'\)/);
   assert.doesNotMatch(out, /Server version|Protocol version/); // no health → no version rows
   assert.match(out, /Stack\s+\/x$/m); // stack dir stays, no pending suffix when down
+});
+
+test('the Watch folder row renders the summary, and is omitted without one', () => {
+  const base = {
+    service: { manager: 'launchd', target: 'x', enabled: true, running: true, pid: 1 },
+    health: { ok: true, version: '1.3.0', protocol: 1 },
+    count: 0,
+    dir: '/tmp/stack',
+    useColor: false,
+  };
+  assert.doesNotMatch(renderReport(base), /Watch folder/);
+  const watch = { tone: 'ok', label: 'watching', info: '/Users/ada/Pictures/Screenshots', hint: null };
+  assert.match(renderReport({ ...base, watch }), /Watch folder\s+● watching \/Users\/ada\/Pictures\/Screenshots/);
+  assert.equal(watchCell({ tone: 'off', label: 'off', info: null, hint: "run 'snapstack watch'" }, false), "○ off (→ run 'snapstack watch')");
 });

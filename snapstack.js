@@ -8,6 +8,7 @@ import { config } from './lib/config.js';
 //   start | stop | restart   transient control of the auto-start service
 //   enable | disable     register / remove start-at-login
 //   update               update the global CLI + restart the daemon
+//   watch [dir|off]      watch an OS screenshots folder (guided setup when bare)
 //   --version | --help
 
 const HELP = `SnapStack — local browser-screenshot pipe for MCP clients.
@@ -18,6 +19,8 @@ Usage: snapstack <command>
   start | stop | restart  Control the running service (this session)
   enable | disable      Register / remove start-at-login (+ crash-restart, self-update)
   update                Update the CLI + server to the latest published version
+  watch [folder | off]  Send the OS screenshot tool's captures to the stack
+                        (guided setup when run bare in a terminal)
   run                   Run the capture + MCP daemon in the foreground
   mcp                   Run the stdio MCP front-end (for LLM-client config)
   --version, -v         Print the version
@@ -75,6 +78,11 @@ switch (cmd) {
   case 'status': {
     const { runReport } = await import('./lib/report.js');
     process.exitCode = await runReport();
+    break;
+  }
+  case 'watch': {
+    const { runWatch } = await import('./lib/watch-cli.js');
+    process.exitCode = await runWatch(process.argv.slice(3));
     break;
   }
   case '--version':
