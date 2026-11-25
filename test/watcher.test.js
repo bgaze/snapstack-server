@@ -55,6 +55,12 @@ test('first pass: pre-existing files are ignored, newer ones ingested once', asy
   assert.equal(listed[0].width, 1568);
   assert.equal(first.state.lastIngest.number, listed[0].number);
 
+  // A new activation (reconfiguration) keeps the last ingested capture.
+  const reconf = await scanOnce({
+    settings: { ...settings, activatedAt: t + 15_000 }, state: first.state, policy: POLICY, now: t + 16_000, log: quiet,
+  });
+  assert.deepEqual(reconf.state.lastIngest, first.state.lastIngest);
+
   // Second pass, same state: nothing new.
   const second = await scanOnce({ settings, state: first.state, policy: POLICY, now: t + 20_000, log: quiet });
   assert.equal(await stack.count(), 1);
