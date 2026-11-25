@@ -23,14 +23,15 @@ function sink() {
 const UP = async () => ({ ok: true, version: '1.3.0' });
 const DOWN = async () => null;
 
-test('watchSummary: off, paused, unsupported, pending, error, watching', () => {
+test('watchSummary: off, paused, pending, error, watching', () => {
   const on = { enabled: true, dir: '/s', deleteOriginal: false, activatedAt: 5 };
   const health = { ok: true, version: '1.3.0' };
   assert.equal(cli.watchSummary({ settings: ws.DEFAULT_SETTINGS, state: null, health }).label, 'off');
   assert.equal(cli.watchSummary({ settings: on, state: null, health: null }).label, 'paused');
-  const old = cli.watchSummary({ settings: on, state: null, health: { ok: true, version: '1.2.3' } });
-  assert.equal(old.label, 'unsupported');
-  assert.match(old.hint, /snapstack update/);
+  // No verdict yet (or a server predating the feature, which never answers).
+  const none = cli.watchSummary({ settings: on, state: null, health });
+  assert.equal(none.label, 'pending');
+  assert.match(none.hint, /snapstack update/);
   // A verdict for an OLDER activation is not this setting's verdict.
   assert.equal(cli.watchSummary({ settings: on, state: { activatedAt: 4, status: 'watching' }, health }).label, 'pending');
   const err = cli.watchSummary({ settings: on, state: { activatedAt: 5, status: 'error', error: { code: 'ENOENT' } }, health });
