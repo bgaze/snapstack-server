@@ -81,7 +81,7 @@ test('macOS happy path: proposed folder created, redirect on "y", undo shown, li
   await ws.writeWatchSettings(ws.DEFAULT_SETTINGS); // first run
   const { prefs, exec } = fakeDefaults('~/Downloads/screenshots'); // missing → Desktop
   const stop = fakeDaemon({ status: 'watching', error: null }, { ingest: true });
-  const io = scriptedIo(['', 'y', '', 'y']); // folder default, redirect yes, keep original, test yes
+  const io = scriptedIo(['', 'y', 'y', '', 'y']); // folder default, redirect yes, thumbnail off yes, keep original, test yes
   const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
   stop();
 
@@ -96,12 +96,14 @@ test('macOS happy path: proposed folder created, redirect on "y", undo shown, li
   const s = await ws.readWatchSettings();
   assert.deepEqual([s.enabled, s.dir, s.deleteOriginal], [true, proposed, false]);
   assertBlocksIsolated(io);
-  // Thumbnail on (macOS default) → closing tip with both ways to turn it off.
-  assert.match(io.lines.at(-1), /defaults write com\.apple\.screencapture show-thumbnail -bool false/);
-  assert.match(io.text(), /Show Floating Thumbnail/);
+  // Thumbnail on (macOS default) → explained, turned off on "y", undo shown — before the test.
+  assert.equal(prefs['show-thumbnail'], 'false');
+  assert.match(io.text(), /defaults delete com\.apple\.screencapture show-thumbnail/);
+  const p = io.prompts;
+  assert.ok(p.findIndex((q) => /thumbnail off/.test(q)) < p.findIndex((q) => /^Test it now/.test(q)));
 });
 
-test('macOS: no thumbnail tip once the thumbnail is off', async () => {
+test('macOS: no thumbnail question once the thumbnail is off', async () => {
   await ws.writeWatchSettings(ws.DEFAULT_SETTINGS);
   const { exec } = fakeDefaults(null, { 'show-thumbnail': '0' });
   const stop = fakeDaemon({ status: 'watching', error: null });
@@ -109,7 +111,7 @@ test('macOS: no thumbnail tip once the thumbnail is off', async () => {
   const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
   stop();
   assert.equal(code, 0, io.text());
-  assert.doesNotMatch(io.text(), /Tip:/);
+  assert.ok(!io.prompts.some((q) => /thumbnail/.test(q)));
 });
 
 test('re-run on an active watch: "y" to stop turns it off, nothing else asked', async () => {
@@ -142,7 +144,7 @@ test('re-run on an active watch: "n" reconfigures, defaults are the current sett
 test('after a watch off, the OS proposal is offered again (not the old folder)', async () => {
   await ws.writeWatchSettings({ enabled: false, dir: path.join(home, 'Documents'), deleteOriginal: false, activatedAt: 1 });
   const stop = fakeDaemon({ status: 'watching', error: null });
-  const io = scriptedIo(['', 'n', '', 'n']);
+  const io = scriptedIo(['', 'n', 'n', '', 'n']);
   await runWizard({ io, platform: 'darwin', home, exec: fakeDefaults(null).exec, probe: UP });
   stop();
   assert.equal(io.prompts.find((p) => p.startsWith('Folder')), `Folder to watch [${path.join(home, 'Pictures', 'Screenshots')}]: `);
@@ -152,12 +154,14 @@ test('macOS: declining the redirect changes nothing and prints the command', asy
   await ws.writeWatchSettings(ws.DEFAULT_SETTINGS); // first run
   const { prefs, exec } = fakeDefaults(null);
   const stop = fakeDaemon({ status: 'watching', error: null });
-  const io = scriptedIo(['', 'n', 'n', 'n']); // default folder, no redirect, delete original, no test
+  const io = scriptedIo(['', 'n', 'n', 'n', 'n']); // default folder, no redirect, no thumbnail change, delete original, no test
   const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
   stop();
   assert.equal(code, 0, io.text());
   assert.equal(prefs.location, null);
+  assert.equal(prefs['show-thumbnail'], undefined);
   assert.match(io.text(), /To do it yourself, run:/);
+  assert.match(io.text(), /Show Floating Thumbnail/);
   assert.equal((await ws.readWatchSettings()).deleteOriginal, true);
 });
 
@@ -167,7 +171,7 @@ test('a protected folder gets a note (no extra question); an error verdict offer
   const stop = fakeDaemon({ status: 'error', error: { code: 'EPERM' } });
   const io = scriptedIo([
     path.join(home, 'Desktop'), // protected → a note, no question
-    'n', '', // no redirect, keep original → daemon says EPERM
+    'n', 'n', '', // no redirect, no thumbnail change, keep original → daemon says EPERM
     'n', // do not choose another folder
   ]);
   const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
