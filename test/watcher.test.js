@@ -122,12 +122,38 @@ test('an undecodable image is stored as-is, never lost', async () => {
 test('an unreadable folder yields an error verdict that keeps what was seen', async () => {
   const t = Date.now();
   const settings = { enabled: true, dir: path.join(stackDir, 'missing'), deleteOriginal: false, activatedAt: t };
-  const prev = { activatedAt: t, dir: settings.dir, since: t, seen: ['a|1|1'] };
+  const prev = { activatedAt: t, dir: settings.dir, since: t, baselined: true, seen: ['a|1|1'] };
   const { state } = await scanOnce({ settings, state: prev, policy: POLICY, now: t, log: quiet });
   assert.equal(state.status, 'error');
   assert.equal(state.error.code, 'ENOENT');
   assert.deepEqual(state.seen, ['a|1|1']);
+  assert.equal(state.baselined, true);
 });
+
+for (const deleteOriginal of [false, true]) {
+  test(`a folder unreadable at activation keeps its old files out once readable (deleteOriginal: ${deleteOriginal})`, async () => {
+    const root = await freshWatchDir();
+    const dir = path.join(root, 'later');
+    const t = Date.now();
+    const settings = { enabled: true, dir, deleteOriginal, activatedAt: t };
+
+    const failed = await scanOnce({ settings, state: null, policy: POLICY, now: t + 1_000, log: quiet });
+    assert.equal(failed.state.status, 'error');
+    assert.equal(failed.state.baselined, false);
+    // Another failing pass must not baseline it either.
+    const again = await scanOnce({ settings, state: failed.state, policy: POLICY, now: t + 2_000, log: quiet });
+    assert.equal(again.state.baselined, false);
+
+    await mkdir(dir);
+    const old = await put(dir, 'old.png', makeRealPng(20, 20), t - 60_000);
+    await put(dir, 'new.png', makeRealPng(20, 20), t + 3_000);
+    const ok = await scanOnce({ settings, state: again.state, policy: POLICY, now: t + 10_000, log: quiet });
+    assert.equal(ok.state.baselined, true);
+    const listed = await stack.listDetailed();
+    assert.deepEqual(listed.map((e) => e.title), ['new.png']);
+    assert.equal(await exists(old), true); // never deleted
+  });
+}
 
 test('watching the stack folder itself is refused', async () => {
   const t = Date.now();
