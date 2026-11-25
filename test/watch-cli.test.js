@@ -41,7 +41,7 @@ test('watchSummary: off, paused, pending, error, watching', () => {
     settings: on, state: { activatedAt: 5, status: 'watching', lastIngest: { number: 7, source: 'Shot.png' } }, health,
   });
   assert.equal(ok.label, 'watching');
-  assert.match(ok.info, /#7 from Shot\.png/);
+  assert.match(ok.info, /#07 from Shot\.png/);
 });
 
 test('explainError gives the macOS remedy for a protected folder', () => {
