@@ -47,6 +47,7 @@ test('watchSummary: off, paused, pending, error, watching', () => {
 test('explainError gives the macOS remedy for a protected folder', () => {
   assert.match(cli.explainError({ code: 'EPERM' }, { platform: 'darwin' }), /Pictures\/Screenshots/);
   assert.doesNotMatch(cli.explainError({ code: 'EPERM' }, { platform: 'linux' }), /macOS/);
+  assert.match(cli.explainError({ code: 'EACCES' }, { platform: 'darwin' }), /permissions/);
 });
 
 test('direct mode rejects a missing folder, a file, an unknown option, extra args', async () => {
