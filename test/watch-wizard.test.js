@@ -97,18 +97,19 @@ test('macOS: declining the redirect changes nothing and prints the command', asy
   assert.equal((await ws.readWatchSettings()).deleteOriginal, true);
 });
 
-test('a protected folder is flagged; an error verdict offers another folder', async () => {
+test('a protected folder gets a note (no extra question); an error verdict offers another folder', async () => {
   const { exec } = fakeDefaults(null);
   const stop = fakeDaemon({ status: 'error', error: { code: 'EPERM' } });
   const io = scriptedIo([
-    path.join(home, 'Desktop'), 'y', // protected → use anyway
+    path.join(home, 'Desktop'), // protected → a note, no question
     'n', '', // no redirect, keep original → daemon says EPERM
     'n', // do not choose another folder
   ]);
   const code = await runWizard({ io, platform: 'darwin', home, exec, probe: UP });
   stop();
   assert.equal(code, 1, io.text());
-  assert.match(io.text(), /Desktop, Documents and Downloads are protected/);
+  assert.match(io.text(), /may keep the background service out/);
+  assert.ok(!io.prompts.some((p) => /anyway/i.test(p)));
   assert.match(io.text(), /cannot watch/);
 });
 

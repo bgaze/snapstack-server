@@ -105,8 +105,9 @@ point the screenshot tool at that folder — only after you say yes, showing the
 
 - **Which folder.** macOS: the `com.apple.screencapture` `location`, else the Desktop. Windows: the *Screenshots*
   folder (Win+PrtScn; Snipping Tool auto-save). Linux: `Pictures/Screenshots` (GNOME; KDE Spectacle is configurable).
-- **macOS protects the Desktop, Documents and Downloads** from background services, so the server cannot watch them.
-  Use another folder (the setup proposes `~/Pictures/Screenshots`) and point macOS at it:
+- **macOS may keep background services out of the Desktop, Documents and Downloads** (privacy protection — it depends
+  on what was granted on your Mac; the setup checks it for real). The safe choice is another folder (the setup proposes
+  `~/Pictures/Screenshots`), with macOS pointed at it:
   `defaults write com.apple.screencapture location ~/Pictures/Screenshots`, or Cmd+Shift+5 → Options → Other Location.
 - **What is picked up:** new image files only (`png`, `jpg`, `gif`, `webp`, up to 50 MB). Files already present when
   you enable the watch, hidden files (macOS writes `.Capture…` first), videos and sub-folders are ignored. An image
@@ -184,7 +185,7 @@ restores the defaults above.
 - **The client doesn't see the tools:** the server must run **before** the MCP client starts; check the config
   (`type: "http"`, correct URL). Direct test: `curl http://127.0.0.1:4123/count`.
 - **Watch folder in `error` (macOS: "not allowed to read this folder"):** the folder is under the Desktop, Documents or
-  Downloads, which macOS keeps away from background services. Run `snapstack watch` and pick another folder.
+  Downloads, which macOS keeps away from this background service. Run `snapstack watch` and pick another folder.
 - **Screenshots do not reach the stack:** check `snapstack` (the *Watch folder* row must say `watching`), then that
   the OS tool really saves there — on macOS, a `location` pointing at a missing folder silently falls back to the
   Desktop (`defaults read com.apple.screencapture location`).
